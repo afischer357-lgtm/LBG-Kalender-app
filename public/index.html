@@ -72,7 +72,7 @@
     <div class="knoepfe"><a class="knopf" id="fertig-oeffnen" href="#">Termin ansehen</a><button class="zweit" onclick="location.reload()">Fertig</button></div>
   </section>
 
-  <footer>Lernberatungsgespräche · <span id="fuss-schule">Heliosschule</span></footer>
+  <footer>Lernberatungsgespräche</footer>
 </main>
 
 <script src="helfer.js"></script>
@@ -94,7 +94,6 @@ async function start() {
   try {
     const d = await api("/api/lernbegleitungen");
     alleLB = d.lernbegleitungen; erlaubteDomains = d.erlaubteDomains || [];
-    $("#fuss-schule").textContent = d.schulname;
     if (erlaubteDomains.length) $("#email").placeholder = "vorname.nachname@" + erlaubteDomains[0];
     zeigeLB();
   } catch (e) { zeige($("#lb-bereich"), esc(e.message), "fehler"); }
