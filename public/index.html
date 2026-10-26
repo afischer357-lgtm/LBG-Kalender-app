@@ -104,7 +104,7 @@ async function start() {
 function zeigeLB() {
   const q = $("#suche").value.trim().toLowerCase();
   const liste = alleLB.filter((lb) => !q || (lb.name + " " + lb.kuerzel + " " + lb.gruppe).toLowerCase().includes(q));
-  if (!alleLB.length) return zeige($("#lb-bereich"), "Es sind noch keine Lernbegleitungen eingetragen.");
+  if (!alleLB.length) return zeige($("#lb-bereich"), "Im Moment bietet noch keine Lernbegleitung LBG-Termine an. Schau später noch einmal vorbei.");
   if (!liste.length) return ($("#lb-bereich").innerHTML = '<p class="leise">Niemand gefunden.</p>');
   const gruppen = {};
   for (const lb of liste) (gruppen[lb.gruppe || ""] ||= []).push(lb);
