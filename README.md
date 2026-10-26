@@ -1,1 +1,1 @@
-# meine-app
+# LBG-Kalender-app
