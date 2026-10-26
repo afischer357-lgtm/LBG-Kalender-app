@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>LBG-Verwaltung</title>
+  <link rel="stylesheet" href="stil.css">
+</head>
+<body>
+<main class="seite">
+  <header class="kopf"><div><h1>LBG-Verwaltung</h1><div class="unter">Lernbegleitungen, Zeiten und Buchungen</div></div>
+    <button class="zweit klein versteckt" id="abmelden">Abmelden</button></header>
+
+  <!-- Anmeldung -->
+  <section class="karte" id="login">
+    <h2>Anmelden</h2>
+    <form id="login-form"><label for="pw">Admin-Passwort</label><input id="pw" type="password" autocomplete="current-password">
+      <div id="login-meldung"></div><div class="knoepfe"><button>Anmelden</button></div></form>
+  </section>
+
+  <div id="bereich" class="versteckt">
+    <div class="tabs">
+      <button data-tab="lb" class="aktiv">Lernbegleitungen</button>
+      <button data-tab="buchungen">Buchungen</button>
+      <button data-tab="einstellungen">Einstellungen</button>
+    </div>
+    <div id="meldung"></div>
+
+    <!-- Lernbegleitungen -->
+    <section id="tab-lb">
+      <div class="karte">
+        <div class="kopfzeile zeile" style="justify-content:space-between"><h2 style="margin:0">Lernbegleitungen</h2>
+          <button class="klein" id="lb-neu" style="flex:0 0 auto">+ Neue Lernbegleitung</button></div>
+        <input id="lb-suche" type="search" placeholder="Name oder Kürzel suchen …" style="margin-top:12px">
+        <p class="leise" id="lb-zaehler" style="margin:8px 0 0"></p>
+        <div id="lb-liste" style="margin-top:12px"></div>
+      </div>
+      <details class="karte" id="import-karte">
+        <summary style="cursor:pointer;font-weight:700">Liste der Lernbegleitungen importieren (Excel)</summary>
+        <p class="leise" style="margin-top:12px">Excel-Datei mit den Spalten <strong>Kürzel, Vorname, Nachname</strong> auswählen – oder die Zellen in Excel markieren, kopieren und unten einfügen.
+          Gibt es ein Kürzel schon, wird nur der Name aktualisiert. Kürzel, die mit <strong>XX</strong> beginnen (ausgeschieden), werden übersprungen.
+          Die Liste wird nur hier gespeichert, nicht bei GitHub.</p>
+        <label for="import-datei">Excel- oder CSV-Datei</label>
+        <input id="import-datei" type="file" accept=".xlsx,.xls,.csv">
+        <label for="import-text">… oder aus Excel einfügen</label>
+        <textarea id="import-text" placeholder="Kürzel	Vorname	Nachname"></textarea>
+        <div id="import-vorschau"></div>
+        <div class="knoepfe"><button id="import-los" disabled>Importieren</button></div>
+      </details>
+      <div class="karte versteckt" id="lb-editor">
+        <h2 id="editor-titel">Lernbegleitung</h2>
+        <div class="zeile">
+          <div><label>Name (so sehen ihn die Schüler:innen)</label><input id="e-name" placeholder="z. B. Frau Schmidt"></div>
+          <div style="flex:0 1 110px"><label>Kürzel</label><input id="e-kuerzel" placeholder="SMI"></div>
+        </div>
+        <div class="zeile">
+          <div><label>Gruppe / Jahrgang (freiwillig)</label><input id="e-gruppe" placeholder="z. B. Jahrgang 11"></div>
+          <div><label>Mailadresse (für spätere Benachrichtigungen)</label><input id="e-email" type="email"></div>
+        </div>
+        <div class="zeile">
+          <div style="flex:0 1 220px"><label>Dauer eines Gesprächs (Min.)</label><input id="e-dauer" type="number" min="5" max="90" step="5" value="15"></div>
+          <div style="flex:0 1 220px"><label>Status</label><select id="e-aktiv"><option value="1">aktiv – buchbar</option><option value="0">pausiert</option></select></div>
+        </div>
+        <h3>Feste LBG-Zeiten (aus dem Stundenplan)</h3>
+        <p class="leise">Die App teilt jede Zeit in Termine der eingestellten Dauer auf, z. B. 09:45–10:30 bei 15 Min. → 09:45, 10:00, 10:15.</p>
+        <div id="e-zeiten"></div>
+        <button class="zweit klein" id="zeit-dazu">+ Zeit hinzufügen</button>
+        <h3>Abwesenheiten dieser Lernbegleitung (freiwillig)</h3>
+        <div id="e-sperren"></div>
+        <button class="zweit klein" id="sperre-dazu">+ Abwesenheit hinzufügen</button>
+        <div id="e-link"></div>
+        <div class="knoepfe">
+          <button id="e-speichern">Speichern</button><button class="zweit" id="e-abbrechen">Abbrechen</button>
+          <button class="rot" id="e-loeschen" style="margin-left:auto">Löschen</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Buchungen -->
+    <section id="tab-buchungen" class="versteckt">
+      <div class="karte">
+        <div class="zeile"><h2 style="margin:0">Buchungen</h2>
+          <select id="filter-lb" style="flex:0 1 240px"></select>
+          <label style="flex:0 1 auto;margin:0;font-weight:400"><input type="checkbox" id="filter-alt" style="width:auto;min-height:0"> auch vergangene</label></div>
+        <div class="tabelle-scroll" style="margin-top:12px"><table><thead><tr><th>Termin</th><th>Lernbegleitung</th><th>Schüler:in</th><th>Status</th><th></th></tr></thead><tbody id="buchungen"></tbody></table></div>
+        <p class="leise" style="margin-top:12px">Buchungen werden 4 Wochen nach dem Termin automatisch gelöscht.</p>
+      </div>
+    </section>
+
+    <!-- Einstellungen -->
+    <section id="tab-einstellungen" class="versteckt">
+      <div class="karte">
+        <h2>Allgemeine Einstellungen</h2>
+        <label>Name der Schule</label><input id="s-schulname">
+        <label>Erlaubte Mail-Domains der Schüler:innen (mit Komma trennen)</label><input id="s-domains" placeholder="heliosschule.de">
+        <div class="zeile">
+          <div><label>Buchbar für die nächsten … Tage</label><input id="s-vorlauf" type="number" min="1" max="90"></div>
+          <div><label>Spätestens … Stunden vorher buchen</label><input id="s-mindest" type="number" min="0" max="168"></div>
+          <div><label>Max. offene Termine pro Schüler:in</label><input id="s-max" type="number" min="1" max="10"></div>
+        </div>
+        <h3>Schulweite Sperrzeiten (Ferien, Feiertage, Projekttage)</h3>
+        <div id="s-sperren"></div>
+        <button class="zweit klein" id="s-sperre-dazu">+ Sperrzeit hinzufügen</button>
+        <div class="knoepfe"><button id="s-speichern">Einstellungen speichern</button></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="helfer.js"></script>
+<script>
+let pw = "", daten = null, bearbeitet = null;
+try { pw = sessionStorage.getItem("lbg-admin") || ""; } catch {}
+
+const admin = (aktion, extra = {}) => api("/api/admin", { aktion, ...extra }, { "x-admin-passwort": pw });
+
+function meldung(text, art = "ok") { zeige($("#meldung"), text, art); if (art === "ok") setTimeout(() => zeige($("#meldung"), ""), 7000); }
+
+// ---------- Anmeldung ----------
+$("#login-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault(); pw = $("#pw").value; await anmelden();
+});
+async function anmelden() {
+  try {
+    daten = await admin("laden");
+    try { sessionStorage.setItem("lbg-admin", pw); } catch {}
+    $("#login").classList.add("versteckt"); $("#bereich").classList.remove("versteckt"); $("#abmelden").classList.remove("versteckt");
+    alles();
+  } catch (e) { if (pw) zeige($("#login-meldung"), esc(e.message), "fehler"); }
+}
+$("#abmelden").onclick = () => { try { sessionStorage.removeItem("lbg-admin"); } catch {} location.reload(); };
+
+// ---------- Tabs ----------
+document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-tab]").forEach((x) => x.classList.toggle("aktiv", x === b));
+  for (const t of ["lb", "buchungen", "einstellungen"]) $("#tab-" + t).classList.toggle("versteckt", t !== b.dataset.tab);
+}));
+
+function alles() { zeigeLBListe(); zeigeBuchungen(); zeigeEinstellungen(); }
+
+// ---------- Lernbegleitungen ----------
+function zeigeLBListe() {
+  const alle = daten.einstellungen.lernbegleitungen;
+  const q = $("#lb-suche").value.trim().toLowerCase();
+  const l = alle.filter((lb) => !q || (lb.name + " " + (lb.kuerzel || "") + " " + (lb.gruppe || "")).toLowerCase().includes(q));
+  const mitZeiten = alle.filter((lb) => (lb.zeiten || []).length && lb.aktiv !== false).length;
+  $("#lb-zaehler").textContent = alle.length ? `${alle.length} eingetragen · ${mitZeiten} davon für Schüler:innen sichtbar (aktiv und mit LBG-Zeiten)` : "";
+  $("#lb-liste").innerHTML = !alle.length ? '<p class="leise">Noch niemand eingetragen. Leg mit „+ Neue Lernbegleitung“ los oder importiere unten deine Excel-Liste.</p>'
+    : !l.length ? '<p class="leise">Niemand gefunden.</p>' : l.map((lb) => `
+    <div class="eintrag"><div class="kopfzeile">
+      <div><strong>${esc(lb.name)}</strong> ${lb.kuerzel ? `<span class="leise">(${esc(lb.kuerzel)})</span>` : ""} ${lb.aktiv === false ? '<span class="marke abgelehnt">pausiert</span>' : ""}
+        <div class="leise">${(lb.zeiten || []).map((z) => `${TAGE_KURZ[z.tag]} ${z.von}–${z.bis}`).join(" · ") || "keine Zeiten"} · ${lb.dauer} Min.${lb.gruppe ? " · " + esc(lb.gruppe) : ""}</div></div>
+      <button class="zweit klein" data-bearbeiten="${esc(lb.id)}">Bearbeiten</button>
+    </div></div>`).join("");
+  document.querySelectorAll("[data-bearbeiten]").forEach((b) => b.addEventListener("click", () =>
+    editor(daten.einstellungen.lernbegleitungen.find((x) => x.id === b.dataset.bearbeiten))));
+  const f = $("#filter-lb"), alt = f.value;
+  f.innerHTML = '<option value="">Alle Lernbegleitungen</option>' + alle.map((lb) => `<option value="${esc(lb.id)}">${esc(lb.name)}</option>`).join("");
+  f.value = alt;
+}
+
+const tagAuswahl = (w) => `<select class="z-tag">${[1, 2, 3, 4, 5, 6].map((t) => `<option value="${t}" ${Number(w) === t ? "selected" : ""}>${TAGE[t]}</option>`).join("")}</select>`;
+function zeitZeile(z = { tag: 1, von: "", bis: "", ort: "" }) {
+  const d = document.createElement("div"); d.className = "zeit-zeile";
+  d.innerHTML = `${tagAuswahl(z.tag)}<input class="z-von" type="time" value="${esc(z.von)}" aria-label="von"><input class="z-bis" type="time" value="${esc(z.bis)}" aria-label="bis">
+    <input class="z-ort" placeholder="Raum (freiwillig)" value="${esc(z.ort)}"><button class="rot klein" title="entfernen">✕</button>`;
+  d.querySelector("button").onclick = () => d.remove();
+  return d;
+}
+function sperrZeile(s = { von: "", bis: "", grund: "" }) {
+  const d = document.createElement("div"); d.className = "zeit-zeile";
+  d.innerHTML = `<input class="s-grund" placeholder="Grund, z. B. Herbstferien" value="${esc(s.grund)}"><input class="s-von" type="date" value="${esc(s.von)}" aria-label="von">
+    <input class="s-bis" type="date" value="${esc(s.bis)}" aria-label="bis"><span></span><button class="rot klein" title="entfernen">✕</button>`;
+  d.querySelector("button").onclick = () => d.remove();
+  return d;
+}
+const leseSperren = (el) => [...el.children].map((d) => ({ grund: d.querySelector(".s-grund").value, von: d.querySelector(".s-von").value, bis: d.querySelector(".s-bis").value || d.querySelector(".s-von").value })).filter((s) => s.von);
+
+function editor(lb) {
+  bearbeitet = lb || null;
+  const x = lb || { name: "", kuerzel: "", gruppe: "", email: "", dauer: 15, aktiv: true, zeiten: [], sperrzeiten: [] };
+  $("#editor-titel").textContent = lb ? "Bearbeiten: " + lb.name : "Neue Lernbegleitung";
+  $("#e-name").value = x.name; $("#e-kuerzel").value = x.kuerzel || ""; $("#e-gruppe").value = x.gruppe || "";
+  $("#e-email").value = x.email || ""; $("#e-dauer").value = x.dauer || 15; $("#e-aktiv").value = x.aktiv === false ? "0" : "1";
+  $("#e-zeiten").innerHTML = ""; (x.zeiten.length ? x.zeiten : [undefined]).forEach((z) => $("#e-zeiten").append(zeitZeile(z)));
+  $("#e-sperren").innerHTML = ""; (x.sperrzeiten || []).forEach((s) => $("#e-sperren").append(sperrZeile(s)));
+  $("#e-loeschen").classList.toggle("versteckt", !lb);
+  if (lb) {
+    const link = `${location.origin}/lernbegleitung.html?t=${lb.token}`;
+    $("#e-link").innerHTML = `<h3>Persönlicher Link für ${esc(lb.name)}</h3>
+      <p class="leise">Über diesen Link sieht die Lernbegleitung ihre Anfragen und kann sie annehmen oder ablehnen. Bitte nur ihr persönlich geben.</p>
+      <div class="link-feld"><input readonly value="${esc(link)}"><button class="zweit klein" id="link-kopieren">Kopieren</button></div>
+      <button class="zweit klein" id="link-neu" style="margin-top:8px">Neuen Link erzeugen (alter wird ungültig)</button>`;
+    $("#link-kopieren").onclick = (e) => kopieren(link, e.target);
+    $("#link-neu").onclick = async () => {
+      if (!confirm("Neuen Link erzeugen? Der alte Link funktioniert dann nicht mehr.")) return;
+      daten = await admin("lb_neuer_link", { id: lb.id }); alles();
+      editor(daten.einstellungen.lernbegleitungen.find((y) => y.id === lb.id)); meldung("Neuer Link erzeugt.");
+    };
+  } else $("#e-link").innerHTML = "";
+  $("#lb-editor").classList.remove("versteckt");
+  $("#lb-editor").scrollIntoView({ behavior: "smooth" });
+}
+$("#lb-neu").onclick = () => editor(null);
+$("#zeit-dazu").onclick = () => $("#e-zeiten").append(zeitZeile());
+$("#sperre-dazu").onclick = () => $("#e-sperren").append(sperrZeile());
+$("#e-abbrechen").onclick = () => $("#lb-editor").classList.add("versteckt");
+$("#e-speichern").onclick = async () => {
+  const lb = {
+    id: bearbeitet?.id, name: $("#e-name").value, kuerzel: $("#e-kuerzel").value, gruppe: $("#e-gruppe").value,
+    email: $("#e-email").value, dauer: Number($("#e-dauer").value), aktiv: $("#e-aktiv").value === "1",
+    zeiten: [...$("#e-zeiten").children].map((d) => ({ tag: Number(d.querySelector(".z-tag").value), von: d.querySelector(".z-von").value, bis: d.querySelector(".z-bis").value, ort: d.querySelector(".z-ort").value }))
+      .filter((z) => z.von || z.bis),
+    sperrzeiten: leseSperren($("#e-sperren")),
+  };
+  try {
+    daten = await admin("lb_speichern", { lb }); alles();
+    const neu = daten.einstellungen.lernbegleitungen.find((x) => (bearbeitet ? x.id === bearbeitet.id : x.name === lb.name.trim()));
+    editor(neu); meldung("Gespeichert ✓");
+  } catch (e) { meldung(esc(e.message), "fehler"); }
+};
+$("#e-loeschen").onclick = async () => {
+  if (!confirm(`„${bearbeitet.name}“ wirklich löschen? Bestehende Buchungen bleiben in der Liste.`)) return;
+  daten = await admin("lb_loeschen", { id: bearbeitet.id }); alles();
+  $("#lb-editor").classList.add("versteckt"); meldung("Gelöscht.");
+};
+
+$("#lb-suche").addEventListener("input", zeigeLBListe);
+
+// ---------- Import aus Excel ----------
+let importListe = [];
+function zeilenAuswerten(zeilen) {
+  zeilen = zeilen.map((z) => (z || []).map((x) => String(x ?? "").trim())).filter((z) => z.some(Boolean));
+  if (!zeilen.length) return [];
+  const kopf = zeilen[0].map((x) => x.toLowerCase());
+  let iK = kopf.findIndex((x) => x.startsWith("kürzel") || x.startsWith("kuerzel") || x === "kurz");
+  let iV = kopf.findIndex((x) => x.startsWith("vorname"));
+  let iN = kopf.findIndex((x) => x.startsWith("nachname") || x === "name");
+  const hatKopf = iK >= 0 || iV >= 0 || iN >= 0;
+  if (!hatKopf) [iK, iV, iN] = [0, 1, 2];
+  return zeilen.slice(hatKopf ? 1 : 0).map((z) => ({ kuerzel: z[iK] || "", vorname: z[iV] || "", nachname: z[iN] || "" }));
+}
+function importVorschau() {
+  const ok = importListe.filter((z) => z.kuerzel && (z.vorname || z.nachname) && !z.kuerzel.toUpperCase().startsWith("XX"));
+  const weg = importListe.filter((z) => z.kuerzel.toUpperCase().startsWith("XX"));
+  const vorhanden = new Set(daten.einstellungen.lernbegleitungen.map((x) => (x.kuerzel || "").toUpperCase()));
+  const neu = ok.filter((z) => !vorhanden.has(z.kuerzel.toUpperCase())).length;
+  zeige($("#import-vorschau"), importListe.length
+    ? `<strong>${ok.length} Lernbegleitungen erkannt</strong> – ${neu} neu, ${ok.length - neu} schon vorhanden (Name wird aktualisiert).` +
+      (weg.length ? `<br>${weg.length} mit „XX“ werden übersprungen: ${weg.map((z) => esc(z.kuerzel)).join(", ")}` : "") +
+      `<br><span class="leise">Beispiel: ${ok.slice(0, 3).map((z) => esc(`${z.vorname} ${z.nachname} (${z.kuerzel})`)).join(" · ")}</span>`
+    : "", importListe.length && !ok.length ? "fehler" : "");
+  $("#import-los").disabled = !ok.length;
+}
+function ladeSkript(src) {
+  return new Promise((ja, nein) => { const s = document.createElement("script"); s.src = src; s.onload = ja; s.onerror = nein; document.head.append(s); });
+}
+$("#import-datei").addEventListener("change", async (ev) => {
+  const datei = ev.target.files[0]; if (!datei) return;
+  try {
+    if (/\.csv$/i.test(datei.name)) {
+      const t = await datei.text();
+      importListe = zeilenAuswerten(t.split(/\r?\n/).map((z) => z.split(/[;,\t]/)));
+    } else {
+      if (!window.XLSX) await ladeSkript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+      const wb = XLSX.read(await datei.arrayBuffer());
+      importListe = zeilenAuswerten(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 }));
+    }
+    $("#import-text").value = "";
+    importVorschau();
+  } catch { zeige($("#import-vorschau"), "Die Datei konnte nicht gelesen werden. Versuch es mit Kopieren & Einfügen.", "fehler"); }
+});
+$("#import-text").addEventListener("input", () => {
+  importListe = zeilenAuswerten($("#import-text").value.split(/\r?\n/).map((z) => z.split("\t")));
+  importVorschau();
+});
+$("#import-los").onclick = async () => {
+  $("#import-los").disabled = true;
+  try {
+    const r = await admin("lb_import", { liste: importListe });
+    daten = r; alles();
+    meldung(`Import fertig: ${r.import.neu} neu, ${r.import.aktualisiert} aktualisiert, ${r.import.uebersprungen} übersprungen. Jetzt bei jeder Lernbegleitung die LBG-Zeiten eintragen.`);
+    importListe = []; $("#import-text").value = ""; $("#import-datei").value = ""; zeige($("#import-vorschau"), "");
+    $("#import-karte").open = false; window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (e) { meldung(esc(e.message), "fehler"); $("#import-los").disabled = false; }
+};
+
+// ---------- Buchungen ----------
+function zeigeBuchungen() {
+  const heute = new Date().toLocaleDateString("sv-SE");
+  const nameVon = Object.fromEntries(daten.einstellungen.lernbegleitungen.map((lb) => [lb.id, lb.name]));
+  const l = daten.buchungen.filter((b) => (!$("#filter-lb").value || b.lbId === $("#filter-lb").value) && ($("#filter-alt").checked || b.datum >= heute));
+  $("#buchungen").innerHTML = l.length ? l.map((b) => `<tr>
+    <td style="white-space:nowrap">${esc(datumKurz(b.datum))}<br>${esc(b.von)} Uhr</td>
+    <td>${esc(nameVon[b.lbId] || "–")}</td>
+    <td>${esc(b.name)}${b.klasse ? " (" + esc(b.klasse) + ")" : ""}<br><span class="leise">${esc(b.email)}</span></td>
+    <td>${marke(b.status)}</td>
+    <td>${["angefragt", "bestaetigt"].includes(b.status) ? `<button class="rot klein" data-absagen="${esc(b.id)}">Absagen</button>` : ""}</td></tr>`).join("")
+    : '<tr><td colspan="5" class="leise">Keine Buchungen.</td></tr>';
+  document.querySelectorAll("[data-absagen]").forEach((k) => k.addEventListener("click", async () => {
+    const n = prompt("Termin absagen. Nachricht an die Schülerin/den Schüler (freiwillig):", "");
+    if (n === null) return;
+    try { daten = await admin("buchung_absagen", { id: k.dataset.absagen, nachricht: n }); alles(); meldung("Abgesagt."); }
+    catch (e) { meldung(esc(e.message), "fehler"); }
+  }));
+}
+$("#filter-lb").onchange = zeigeBuchungen;
+$("#filter-alt").onchange = zeigeBuchungen;
+
+// ---------- Einstellungen ----------
+function zeigeEinstellungen() {
+  const e = daten.einstellungen;
+  $("#s-schulname").value = e.schulname; $("#s-domains").value = (e.erlaubteDomains || []).join(", ");
+  $("#s-vorlauf").value = e.vorlaufTage; $("#s-mindest").value = e.mindestStundenVorher; $("#s-max").value = e.maxOffeneProSchueler;
+  $("#s-sperren").innerHTML = ""; (e.sperrzeiten || []).forEach((s) => $("#s-sperren").append(sperrZeile(s)));
+}
+$("#s-sperre-dazu").onclick = () => $("#s-sperren").append(sperrZeile());
+$("#s-speichern").onclick = async () => {
+  try {
+    daten = await admin("einstellungen_speichern", { einstellungen: {
+      schulname: $("#s-schulname").value, erlaubteDomains: $("#s-domains").value,
+      vorlaufTage: $("#s-vorlauf").value, mindestStundenVorher: $("#s-mindest").value, maxOffeneProSchueler: $("#s-max").value,
+      sperrzeiten: leseSperren($("#s-sperren")),
+    } });
+    alles(); meldung("Einstellungen gespeichert ✓");
+  } catch (e) { meldung(esc(e.message), "fehler"); }
+};
+
+if (pw) anmelden();
+</script>
+</body>
+</html>

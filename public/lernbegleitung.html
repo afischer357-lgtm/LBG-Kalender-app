@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Meine LBG-Anfragen</title>
+  <link rel="stylesheet" href="stil.css">
+</head>
+<body>
+<main class="seite">
+  <header class="kopf">
+    <div><h1 id="titel">Meine LBG-Termine</h1><div class="unter" id="zeiten"></div></div>
+    <button class="zweit klein" id="neu-laden">Aktualisieren</button>
+  </header>
+  <div id="meldung"></div>
+  <section class="karte"><h2>Neue Anfragen</h2><div id="anfragen"></div></section>
+  <section class="karte"><h2>Bestätigte Termine</h2><div id="bestaetigt"></div></section>
+  <section class="karte"><h2>Erledigt / abgesagt</h2><div id="sonstige"></div></section>
+  <p class="leise">Tipp: Lege dir diese Seite als Lesezeichen oder auf dem iPad-Homescreen ab. Der Link ist persönlich – bitte nicht weitergeben.</p>
+</main>
+<script src="helfer.js"></script>
+<script>
+const t = new URLSearchParams(location.search).get("t") || "";
+
+function eintrag(b, knoepfe) {
+  return `<div class="eintrag" data-id="${esc(b.id)}">
+    <div class="kopfzeile">
+      <div class="wann">${esc(datumKurz(b.datum))} · ${esc(b.von)}–${esc(b.bis)} Uhr</div>${marke(b.status)}
+    </div>
+    <div class="wer"><strong>${esc(b.name)}</strong>${b.klasse ? " (" + esc(b.klasse) + ")" : ""} · <a href="mailto:${esc(b.email)}">${esc(b.email)}</a></div>
+    ${b.anliegen ? `<div class="anliegen">„${esc(b.anliegen)}“</div>` : ""}
+    ${b.nachricht ? `<div class="leise">Ihre Nachricht: ${esc(b.nachricht)}</div>` : ""}
+    ${knoepfe ? `<input class="nachricht" placeholder="Nachricht an Schüler:in (freiwillig)" maxlength="300" style="margin:6px 0 8px">
+    <div class="zeile" style="gap:8px">${knoepfe}</div>` : ""}
+  </div>`;
+}
+
+function zeigen(d) {
+  $("#titel").textContent = "LBG-Termine: " + d.lernbegleitung.name;
+  const z = (d.lernbegleitung.zeiten || []).map((x) => `${TAGE_KURZ[x.tag]} ${x.von}–${x.bis}`).join(" · ");
+  $("#zeiten").textContent = z ? `Ihre LBG-Zeiten: ${z} (je ${d.lernbegleitung.dauer} Min.)` : "Noch keine LBG-Zeiten eingetragen.";
+  const a = d.buchungen.filter((b) => b.status === "angefragt");
+  const b = d.buchungen.filter((b) => b.status === "bestaetigt");
+  const s = d.buchungen.filter((b) => !["angefragt", "bestaetigt"].includes(b.status));
+  $("#anfragen").innerHTML = a.length ? a.map((x) => eintrag(x,
+    '<button class="gruen klein" data-aktion="annehmen">Annehmen</button><button class="rot klein" data-aktion="ablehnen">Ablehnen</button>')).join("")
+    : '<p class="leise">Keine offenen Anfragen.</p>';
+  $("#bestaetigt").innerHTML = b.length ? b.map((x) => eintrag(x, '<button class="rot klein" data-aktion="absagen">Termin absagen</button>')).join("")
+    : '<p class="leise">Keine bestätigten Termine.</p>';
+  $("#sonstige").innerHTML = s.length ? s.map((x) => eintrag(x)).join("") : '<p class="leise">–</p>';
+  document.querySelectorAll("[data-aktion]").forEach((k) => k.addEventListener("click", () => handeln(k)));
+}
+
+async function handeln(knopf) {
+  const box = knopf.closest(".eintrag");
+  const aktion = knopf.dataset.aktion;
+  if (aktion !== "annehmen" && !confirm(aktion === "ablehnen" ? "Anfrage ablehnen?" : "Bestätigten Termin absagen?")) return;
+  knopf.disabled = true;
+  try {
+    zeigen(await api("/api/lernbegleitung", { t, id: box.dataset.id, aktion, nachricht: box.querySelector(".nachricht")?.value || "" }));
+    zeige($("#meldung"), aktion === "annehmen" ? "Termin bestätigt ✓" : "Erledigt – der Termin ist wieder frei.", "ok");
+  } catch (e) { zeige($("#meldung"), esc(e.message), "fehler"); knopf.disabled = false; }
+}
+
+async function laden() {
+  try { zeigen(await api("/api/lernbegleitung?t=" + encodeURIComponent(t))); }
+  catch (e) { zeige($("#meldung"), esc(e.message), "fehler"); }
+}
+$("#neu-laden").onclick = () => { zeige($("#meldung"), ""); laden(); };
+laden();
+</script>
+</body>
+</html>

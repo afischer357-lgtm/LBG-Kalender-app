@@ -1,0 +1,11 @@
+node_modules/
+.netlify/
+.env
+.DS_Store
+# Mac-Ordnersymbol
+Icon?
+
+# Listen mit Namen gehören nicht ins öffentliche Repo
+*.xlsx
+*.xls
+*.csv

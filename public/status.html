@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mein LBG-Termin</title>
+  <link rel="stylesheet" href="stil.css">
+</head>
+<body>
+<main class="seite">
+  <header class="kopf"><h1>Dein LBG-Termin</h1><a href="/">Neuen Termin buchen</a></header>
+  <section class="karte" id="inhalt"><p class="leise">Lade …</p></section>
+</main>
+<script src="helfer.js"></script>
+<script>
+const p = new URLSearchParams(location.search);
+const id = p.get("id"), t = p.get("t");
+
+function zeigeBuchung(b) {
+  const offen = ["angefragt", "bestaetigt"].includes(b.status);
+  const erklaerung = {
+    angefragt: "Deine Lernbegleitung hat die Anfrage noch nicht bestätigt. Schau später wieder hier vorbei.",
+    bestaetigt: "Super – der Termin steht. Sei bitte pünktlich da!",
+    abgelehnt: "Dieser Termin klappt leider nicht. Such dir gern einen anderen aus.",
+    abgesagt_schueler: "Du hast diesen Termin abgesagt.",
+    abgesagt_lb: "Deine Lernbegleitung musste den Termin absagen. Such dir gern einen neuen aus.",
+    abgesagt_admin: "Der Termin wurde von der Schule abgesagt.",
+  }[b.status] || "";
+  $("#inhalt").innerHTML = `
+    ${marke(b.status)}
+    <div class="termin-gross" style="margin-top:10px">${esc(datumLang(b.datum))}, ${esc(b.von)}–${esc(b.bis)} Uhr</div>
+    <p>bei <strong>${esc(b.lernbegleitung)}</strong>${b.ort ? " · " + esc(b.ort) : ""}</p>
+    <p>${erklaerung}</p>
+    ${b.nachricht ? `<div class="hinweis"><strong>Nachricht deiner Lernbegleitung:</strong><br>${esc(b.nachricht)}</div>` : ""}
+    ${b.anliegen ? `<p class="leise">Dein Anliegen: ${esc(b.anliegen)}</p>` : ""}
+    <div id="meldung"></div>
+    <div class="knoepfe">
+      ${offen ? '<button class="rot" id="absagen">Termin absagen</button>' : '<a class="knopf" href="/">Neuen Termin suchen</a>'}
+    </div>`;
+  if (offen) $("#absagen").onclick = absagen;
+}
+
+async function absagen() {
+  if (!confirm("Möchtest du diesen Termin wirklich absagen?")) return;
+  try {
+    const d = await api("/api/status", { id, t, aktion: "absagen" });
+    zeigeBuchung(d.buchung);
+  } catch (e) { zeige($("#meldung"), esc(e.message), "fehler"); }
+}
+
+(async () => {
+  try {
+    const d = await api(`/api/status?id=${encodeURIComponent(id || "")}&t=${encodeURIComponent(t || "")}`);
+    merker.dazu(id, t);
+    zeigeBuchung(d.buchung);
+  } catch (e) { zeige($("#inhalt"), esc(e.message), "fehler"); }
+})();
+</script>
+</body>
+</html>

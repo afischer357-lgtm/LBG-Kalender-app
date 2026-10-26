@@ -1,0 +1,15 @@
+# Einstellungen für Netlify – hier steht, wo was liegt.
+[build]
+  publish = "public"            # Ordner mit den Webseiten
+  functions = "netlify/functions"  # Ordner mit den Server-Funktionen
+
+[functions]
+  node_bundler = "esbuild"
+
+# Etwas Sicherheit für alle Seiten
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"

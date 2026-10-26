@@ -1,0 +1,130 @@
+/* ===== LBG-App – gemeinsames Aussehen aller Seiten ===== */
+:root {
+  --grund: #f6f4ef;
+  --karte: #ffffff;
+  --text: #1f2a2e;
+  --leise: #5d6b70;
+  --linie: #e2ddd3;
+  --akzent: #1f6f6b;        /* Petrol */
+  --akzent-hell: #e3f1ef;
+  --akzent-text: #ffffff;
+  --warn: #9a5b00;
+  --warn-hell: #fff3dc;
+  --gut: #2f7a3a;
+  --gut-hell: #e5f4e6;
+  --schlecht: #a33a2b;
+  --schlecht-hell: #fbe9e6;
+  --radius: 14px;
+  --schatten: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grund: #141a1c; --karte: #1d2528; --text: #e9eeee; --leise: #9fb0b3; --linie: #2e3a3e;
+    --akzent: #4fb3aa; --akzent-hell: #1b3533; --akzent-text: #0d1a19;
+    --warn: #f0b75a; --warn-hell: #3a2c14; --gut: #7ccf86; --gut-hell: #1c3220;
+    --schlecht: #f08a7a; --schlecht-hell: #3a1f1b; --schatten: none;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--grund); color: var(--text);
+  font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+.seite { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+header.kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+header.kopf h1 { font-size: 1.6rem; margin: 0; letter-spacing: -.01em; }
+header.kopf .unter { color: var(--leise); font-size: .95rem; }
+h2 { font-size: 1.15rem; margin: 0 0 12px; }
+h3 { font-size: 1rem; margin: 18px 0 8px; color: var(--leise); font-weight: 600; }
+p { margin: 0 0 12px; }
+a { color: var(--akzent); }
+.leise { color: var(--leise); font-size: .93rem; }
+.karte { background: var(--karte); border: 1px solid var(--linie); border-radius: var(--radius); padding: 20px; box-shadow: var(--schatten); margin-bottom: 16px; }
+.versteckt { display: none !important; }
+
+/* Schritte */
+.schritte { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+.schritte span { font-size: .85rem; padding: 4px 10px; border-radius: 99px; background: var(--karte); border: 1px solid var(--linie); color: var(--leise); }
+.schritte span.aktiv { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+
+/* Knöpfe & Felder */
+button, .knopf {
+  font: inherit; cursor: pointer; border: 1px solid var(--akzent); background: var(--akzent); color: var(--akzent-text);
+  padding: 10px 18px; border-radius: 10px; font-weight: 600; text-decoration: none; display: inline-block; min-height: 44px;
+}
+button.zweit, .knopf.zweit { background: transparent; color: var(--akzent); }
+button.rot { background: transparent; border-color: var(--schlecht); color: var(--schlecht); }
+button.gruen { background: var(--gut); border-color: var(--gut); color: #fff; }
+button.klein { padding: 6px 12px; min-height: 36px; font-size: .9rem; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button.zurueck { background: none; border: none; color: var(--akzent); padding: 0; min-height: 0; font-weight: 500; margin-bottom: 12px; }
+label { display: block; font-weight: 600; font-size: .92rem; margin: 12px 0 4px; }
+input, textarea, select {
+  font: inherit; width: 100%; padding: 10px 12px; border: 1px solid var(--linie); border-radius: 10px;
+  background: var(--grund); color: var(--text); min-height: 44px;
+}
+input:focus, textarea:focus, select:focus, button:focus-visible { outline: 3px solid color-mix(in srgb, var(--akzent) 35%, transparent); outline-offset: 1px; }
+textarea { min-height: 80px; resize: vertical; }
+.zeile { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.zeile > * { flex: 1 1 160px; }
+.zeile > button, .zeile > .knopf { flex: 0 0 auto; }
+.knoepfe { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+/* Lernbegleitungen */
+.lb-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.lb-wahl {
+  text-align: left; background: var(--karte); color: var(--text); border: 1px solid var(--linie); font-weight: 400;
+  padding: 14px 16px; border-radius: 12px;
+}
+.lb-wahl:hover { border-color: var(--akzent); }
+.lb-wahl strong { display: block; font-size: 1.02rem; }
+.lb-wahl small { color: var(--leise); }
+
+/* Termine */
+.woche { margin-bottom: 18px; }
+.tag { display: grid; grid-template-columns: 120px 1fr; gap: 10px; padding: 10px 0; border-top: 1px solid var(--linie); }
+.tag:first-of-type { border-top: none; }
+.tag .datum { font-weight: 600; }
+.tag .datum small { display: block; color: var(--leise); font-weight: 400; }
+.slots { display: flex; flex-wrap: wrap; gap: 8px; }
+.slot {
+  background: var(--akzent-hell); color: var(--akzent); border: 1px solid transparent; padding: 8px 12px;
+  border-radius: 10px; font-weight: 600; min-height: 40px; font-variant-numeric: tabular-nums;
+}
+.slot:hover { border-color: var(--akzent); }
+.slot.belegt { background: transparent; color: var(--leise); border: 1px dashed var(--linie); text-decoration: line-through; cursor: default; font-weight: 400; }
+@media (max-width: 520px) { .tag { grid-template-columns: 1fr; gap: 6px; } }
+
+/* Hinweise & Status */
+.hinweis { padding: 12px 14px; border-radius: 10px; margin: 12px 0; background: var(--akzent-hell); }
+.hinweis.fehler { background: var(--schlecht-hell); color: var(--schlecht); }
+.hinweis.ok { background: var(--gut-hell); color: var(--gut); }
+.marke { display: inline-block; font-size: .8rem; font-weight: 700; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+.marke.angefragt { background: var(--warn-hell); color: var(--warn); }
+.marke.bestaetigt { background: var(--gut-hell); color: var(--gut); }
+.marke.abgelehnt, .marke.abgesagt_schueler, .marke.abgesagt_lb, .marke.abgesagt_admin { background: var(--schlecht-hell); color: var(--schlecht); }
+.termin-gross { font-size: 1.3rem; font-weight: 700; margin: 4px 0; }
+.link-feld { display: flex; gap: 8px; }
+.link-feld input { font-size: .85rem; }
+.link-feld button { flex: 0 0 auto; }
+
+/* Listen in Lehrkraft-/Admin-Bereich */
+.eintrag { border-top: 1px solid var(--linie); padding: 14px 0; }
+.eintrag:first-child { border-top: none; padding-top: 0; }
+.eintrag .kopfzeile { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; }
+.eintrag .wann { font-weight: 700; font-variant-numeric: tabular-nums; }
+.eintrag .wer { margin: 4px 0; }
+.eintrag .anliegen { color: var(--leise); font-size: .95rem; margin: 4px 0 8px; white-space: pre-wrap; }
+
+/* Tabs im Admin */
+.tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.tabs button { background: var(--karte); color: var(--text); border-color: var(--linie); font-weight: 500; }
+.tabs button.aktiv { background: var(--akzent); color: var(--akzent-text); border-color: var(--akzent); }
+.zeit-zeile { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1.2fr auto; gap: 8px; margin-bottom: 8px; align-items: center; }
+@media (max-width: 600px) { .zeit-zeile { grid-template-columns: 1fr 1fr; } }
+table { width: 100%; border-collapse: collapse; font-size: .93rem; }
+th, td { text-align: left; padding: 8px 6px; border-top: 1px solid var(--linie); vertical-align: top; }
+th { color: var(--leise); font-weight: 600; border-top: none; }
+.tabelle-scroll { overflow-x: auto; }
+footer { margin-top: 40px; color: var(--leise); font-size: .85rem; text-align: center; }

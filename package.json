@@ -1,0 +1,9 @@
+{
+  "name": "lbg-kalender-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Buchung von Lernberatungsgesprächen (LBG) an der Heliosschule",
+  "dependencies": {
+    "@netlify/blobs": "^11.1.6"
+  }
+}

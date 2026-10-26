@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LBG-Termine</title>
+  <link rel="stylesheet" href="stil.css">
+</head>
+<body>
+<main class="seite">
+  <header class="kopf">
+    <div>
+      <h1>Lernberatung buchen</h1>
+      <div class="unter" id="schulname">Termine für dein Lernberatungsgespräch</div>
+    </div>
+  </header>
+
+  <!-- Meine Reservierungen (auf diesem Gerät gemerkt) -->
+  <section id="meine" class="karte versteckt">
+    <h2>Deine Termine</h2>
+    <div id="meine-liste"></div>
+  </section>
+
+  <div class="schritte">
+    <span data-schritt="1" class="aktiv">1 Lernbegleitung</span>
+    <span data-schritt="2">2 Termin</span>
+    <span data-schritt="3">3 Angaben</span>
+  </div>
+
+  <!-- Schritt 1: Lernbegleitung wählen -->
+  <section id="schritt1" class="karte">
+    <h2>Bei wem möchtest du ein Gespräch?</h2>
+    <input id="suche" type="search" placeholder="Name oder Kürzel suchen …" aria-label="Lernbegleitung suchen">
+    <div id="lb-bereich" style="margin-top:14px"><p class="leise">Lade …</p></div>
+  </section>
+
+  <!-- Schritt 2: Termin wählen -->
+  <section id="schritt2" class="karte versteckt">
+    <button class="zurueck" data-zu="1">← andere Lernbegleitung</button>
+    <h2 id="termin-titel">Freie Termine</h2>
+    <p class="leise" id="termin-info"></p>
+    <div id="termine"></div>
+  </section>
+
+  <!-- Schritt 3: Angaben -->
+  <section id="schritt3" class="karte versteckt">
+    <button class="zurueck" data-zu="2">← anderen Termin wählen</button>
+    <h2>Deine Angaben</h2>
+    <div class="hinweis"><span class="leise">Du reservierst:</span><div class="termin-gross" id="gewaehlt"></div><div id="gewaehlt-lb"></div></div>
+    <form id="formular" novalidate>
+      <div class="zeile">
+        <div><label for="name">Dein Name</label><input id="name" autocomplete="name" required></div>
+        <div><label for="klasse">Klasse / Gruppe</label><input id="klasse" placeholder="z. B. 11b"></div>
+      </div>
+      <label for="email">Deine Schul-Mailadresse</label>
+      <input id="email" type="email" autocomplete="email" inputmode="email" required>
+      <label for="anliegen">Worum soll es gehen? <span class="leise">(freiwillig)</span></label>
+      <textarea id="anliegen" maxlength="500" placeholder="z. B. Planung der nächsten Lernzeit, Fragen zur Klausur …"></textarea>
+      <div id="form-meldung"></div>
+      <div class="knoepfe"><button type="submit" id="absenden">Termin reservieren</button></div>
+      <p class="leise" style="margin-top:12px">Deine Lernbegleitung muss den Termin noch bestätigen. Deine Angaben sieht nur sie und die Schule; sie werden 4 Wochen nach dem Termin automatisch gelöscht.</p>
+    </form>
+  </section>
+
+  <!-- Fertig -->
+  <section id="fertig" class="karte versteckt">
+    <h2>Reserviert! 🎉</h2>
+    <div class="termin-gross" id="fertig-termin"></div>
+    <p>Deine Anfrage ist bei deiner Lernbegleitung angekommen. Sobald sie bestätigt, siehst du das hier auf dieser Seite unter <strong>„Deine Termine“</strong>.</p>
+    <p class="leise">Auf einem anderen Gerät? Speichere dir diesen Link – damit kannst du den Stand jederzeit ansehen oder absagen:</p>
+    <div class="link-feld"><input id="fertig-link" readonly><button class="zweit klein" id="fertig-kopieren">Kopieren</button></div>
+    <div class="knoepfe"><a class="knopf" id="fertig-oeffnen" href="#">Termin ansehen</a><button class="zweit" onclick="location.reload()">Fertig</button></div>
+  </section>
+
+  <footer>Lernberatungsgespräche · <span id="fuss-schule">Heliosschule</span></footer>
+</main>
+
+<script src="helfer.js"></script>
+<script>
+let alleLB = [], erlaubteDomains = [], aktuelleLB = null, gewaehlt = null;
+
+function schritt(n) {
+  for (const i of [1, 2, 3]) $("#schritt" + i).classList.toggle("versteckt", i !== n);
+  document.querySelectorAll(".schritte span").forEach((s) => s.classList.toggle("aktiv", Number(s.dataset.schritt) === n));
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+document.querySelectorAll("[data-zu]").forEach((b) => b.addEventListener("click", () => {
+  const z = Number(b.dataset.zu);
+  if (z === 2 && aktuelleLB) ladeTermine(aktuelleLB); else schritt(z);
+}));
+
+// ---- Schritt 1 ----
+async function start() {
+  try {
+    const d = await api("/api/lernbegleitungen");
+    alleLB = d.lernbegleitungen; erlaubteDomains = d.erlaubteDomains || [];
+    $("#fuss-schule").textContent = d.schulname;
+    if (erlaubteDomains.length) $("#email").placeholder = "vorname.nachname@" + erlaubteDomains[0];
+    zeigeLB();
+  } catch (e) { zeige($("#lb-bereich"), esc(e.message), "fehler"); }
+  zeigeMeine();
+}
+
+function zeigeLB() {
+  const q = $("#suche").value.trim().toLowerCase();
+  const liste = alleLB.filter((lb) => !q || (lb.name + " " + lb.kuerzel + " " + lb.gruppe).toLowerCase().includes(q));
+  if (!alleLB.length) return zeige($("#lb-bereich"), "Es sind noch keine Lernbegleitungen eingetragen.");
+  if (!liste.length) return ($("#lb-bereich").innerHTML = '<p class="leise">Niemand gefunden.</p>');
+  const gruppen = {};
+  for (const lb of liste) (gruppen[lb.gruppe || ""] ||= []).push(lb);
+  $("#lb-bereich").innerHTML = Object.keys(gruppen).sort().map((g) => `
+    ${g ? `<h3>${esc(g)}</h3>` : ""}
+    <div class="lb-liste">${gruppen[g].map((lb) => `
+      <button class="lb-wahl" data-id="${esc(lb.id)}">
+        <strong>${esc(lb.name)}</strong>
+        <small>${lb.kuerzel ? esc(lb.kuerzel) + " · " : ""}${lb.dauer} Min. pro Gespräch</small>
+      </button>`).join("")}</div>`).join("");
+  document.querySelectorAll(".lb-wahl").forEach((b) => b.addEventListener("click", () => ladeTermine(alleLB.find((x) => x.id === b.dataset.id))));
+}
+$("#suche").addEventListener("input", zeigeLB);
+
+// ---- Schritt 2 ----
+async function ladeTermine(lb) {
+  aktuelleLB = lb;
+  schritt(2);
+  $("#termin-titel").textContent = "Freie Termine – " + lb.name;
+  $("#termin-info").textContent = `Ein Gespräch dauert ${lb.dauer} Minuten. Tippe auf eine Uhrzeit.`;
+  $("#termine").innerHTML = '<p class="leise">Lade Termine …</p>';
+  try {
+    const d = await api("/api/termine?lb=" + encodeURIComponent(lb.id));
+    zeigeTermine(d.termine);
+  } catch (e) { zeige($("#termine"), esc(e.message), "fehler"); }
+}
+
+function zeigeTermine(termine) {
+  if (!termine.some((t) => t.frei)) {
+    return zeige($("#termine"), "Im Moment sind keine Termine frei. Schau später noch einmal vorbei oder sprich deine Lernbegleitung direkt an.");
+  }
+  const tage = {};
+  for (const t of termine) (tage[t.datum] ||= []).push(t);
+  $("#termine").innerHTML = Object.keys(tage).map((datum) => {
+    const ts = tage[datum];
+    const ort = [...new Set(ts.map((t) => t.ort).filter(Boolean))].join(", ");
+    return `<div class="tag">
+      <div class="datum">${esc(datumKurz(datum))}${ort ? `<small>${esc(ort)}</small>` : ""}</div>
+      <div class="slots">${ts.map((t) => t.frei
+        ? `<button class="slot" data-datum="${t.datum}" data-von="${t.von}" data-bis="${t.bis}" data-ort="${esc(t.ort)}">${t.von}</button>`
+        : `<span class="slot belegt" title="schon vergeben">${t.von}</span>`).join("")}</div>
+    </div>`;
+  }).join("");
+  document.querySelectorAll("button.slot").forEach((b) => b.addEventListener("click", () => {
+    gewaehlt = { ...b.dataset };
+    $("#gewaehlt").textContent = `${datumLang(gewaehlt.datum)}, ${gewaehlt.von}–${gewaehlt.bis} Uhr`;
+    $("#gewaehlt-lb").textContent = "bei " + aktuelleLB.name + (gewaehlt.ort ? " · " + gewaehlt.ort : "");
+    zeige($("#form-meldung"), "");
+    schritt(3);
+    // gespeicherte Angaben vom letzten Mal vorschlagen
+    try { const p = JSON.parse(localStorage.getItem("lbg-person") || "{}");
+      for (const k of ["name", "klasse", "email"]) if (!$("#" + k).value && p[k]) $("#" + k).value = p[k]; } catch {}
+  }));
+}
+
+// ---- Schritt 3 ----
+$("#formular").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const daten = {
+    lb: aktuelleLB.id, datum: gewaehlt.datum, von: gewaehlt.von,
+    name: $("#name").value, klasse: $("#klasse").value, email: $("#email").value.trim(), anliegen: $("#anliegen").value,
+  };
+  if (daten.name.trim().length < 2) return zeige($("#form-meldung"), "Bitte gib deinen Namen an.", "fehler");
+  const dom = (daten.email.split("@")[1] || "").toLowerCase();
+  if (erlaubteDomains.length && !erlaubteDomains.includes(dom)) {
+    return zeige($("#form-meldung"), "Bitte nutze deine Schul-Mailadresse (@" + esc(erlaubteDomains.join(" oder @")) + ").", "fehler");
+  }
+  $("#absenden").disabled = true;
+  try {
+    const r = await api("/api/reservieren", daten);
+    try { localStorage.setItem("lbg-person", JSON.stringify({ name: daten.name, klasse: daten.klasse, email: daten.email })); } catch {}
+    merker.dazu(r.id, r.token);
+    const link = `${location.origin}/status.html?id=${r.id}&t=${r.token}`;
+    $("#fertig-termin").textContent = `${datumLang(gewaehlt.datum)}, ${gewaehlt.von} Uhr – ${aktuelleLB.name}`;
+    $("#fertig-link").value = link;
+    $("#fertig-oeffnen").href = link;
+    $("#fertig-kopieren").onclick = (e) => kopieren(link, e.target);
+    for (const i of [1, 2, 3]) $("#schritt" + i).classList.add("versteckt");
+    document.querySelector(".schritte").classList.add("versteckt");
+    $("#fertig").classList.remove("versteckt");
+  } catch (e) {
+    zeige($("#form-meldung"), esc(e.message), "fehler");
+    if (e.status === 409 && /gerade|nicht \(mehr\)/.test(e.message)) setTimeout(() => ladeTermine(aktuelleLB), 2500);
+  } finally { $("#absenden").disabled = false; }
+});
+
+// ---- Meine Termine ----
+async function zeigeMeine() {
+  const gemerkt = merker.laden();
+  if (!gemerkt.length) return;
+  const heute = new Date().toLocaleDateString("sv-SE");
+  const ergebnisse = await Promise.all(gemerkt.map(async (g) => {
+    try { return { ...g, b: (await api(`/api/status?id=${g.id}&t=${g.t}`)).buchung }; }
+    catch (e) { if (e.status === 404) merker.weg(g.id); return null; }
+  }));
+  const liste = ergebnisse.filter((x) => x && x.b.datum >= heute);
+  if (!liste.length) return;
+  $("#meine").classList.remove("versteckt");
+  $("#meine-liste").innerHTML = liste.map(({ id, t, b }) => `
+    <div class="eintrag"><div class="kopfzeile">
+      <div><div class="wann">${esc(datumKurz(b.datum))} ${esc(b.von)} Uhr</div><div class="leise">${esc(b.lernbegleitung)}${b.ort ? " · " + esc(b.ort) : ""}</div></div>
+      <div>${marke(b.status)} <a href="status.html?id=${id}&t=${t}" style="margin-left:8px">Details</a></div>
+    </div>${b.nachricht ? `<div class="anliegen">Nachricht: ${esc(b.nachricht)}</div>` : ""}</div>`).join("");
+}
+
+start();
+</script>
+</body>
+</html>
